@@ -1,0 +1,284 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>7. Changelog &mdash; Py4J</title>
+    <link rel="stylesheet" href="_static/py4jdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '#',
+        VERSION:     '0.4',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  'true'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="top" title="Py4J" href="index.html" />
+    <link rel="prev" title="6. Frequently Asked Questions" href="faq.html" />
+    <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-18626179-1']);
+    _gaq.push(['_trackPageview']);
+  
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+    </script> 
+  </head>
+  <body>
+  	<div class="page">
+<div class="banner">Py4J - A Bridge between Python and Java</div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 5px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="faq.html" title="6. Frequently Asked Questions"
+             accesskey="P">previous</a> |</li>
+    <li><a href="index.html">Home</a> |</li>
+	<li><a href="download.html">Download</a> |</li>
+	<li><a href="contents.html">Doc</a> |</li>
+	<li><a href="http://py4j.wordpress.com">Blog</a> |</li>
+	<li><a href="https://github.com/bartdag/py4j">github</a> |</li>
+	<li><a href="about.html">About</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="contents.html">On This Page</a></h3>
+            <ul>
+<li><a class="reference internal" href="#">7. Changelog</a><ul>
+<li><a class="reference internal" href="#py4j-0-7">7.1. Py4J 0.7</a></li>
+<li><a class="reference internal" href="#py4j-0-6">7.2. Py4J 0.6</a></li>
+<li><a class="reference internal" href="#py4j-0-5">7.3. Py4J 0.5</a></li>
+<li><a class="reference internal" href="#py4j-0-4">7.4. Py4J 0.4</a></li>
+<li><a class="reference internal" href="#py4j-0-3">7.5. Py4J 0.3</a></li>
+<li><a class="reference internal" href="#py4j-0-2">7.6. Py4J 0.2</a></li>
+<li><a class="reference internal" href="#py4j-0-1">7.7. Py4J 0.1</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="faq.html"
+                                  title="previous chapter">6. Frequently Asked Questions</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/changelog.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="changelog">
+<h1>7. Changelog<a class="headerlink" href="#changelog" title="Permalink to this headline">¶</a></h1>
+<p>The changelog describes in plain English the changes that occurred between Py4J releases.</p>
+<div class="section" id="py4j-0-7">
+<h2>7.1. Py4J 0.7<a class="headerlink" href="#py4j-0-7" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Major refactoring to support Python 3. Thanks to Alex Grönholm for his
+patch.</li>
+<li>The build and setup files have been totally changed. Py4J no longer requires
+Paver to build and everything is done through ant. The setup.py file only
+uses distutils.</li>
+<li>Added support for Java byte[]: byte array are passed by value and converted
+to bytearray or bytes.</li>
+<li>Py4J package name changed from Py4J to py4j.</li>
+<li>Bug fixes in the Python callback server and unicode support.</li>
+<li><a class="reference external" href="https://github.com/bartdag/py4j/issues/labels/v0.7">github 0.7 milestone</a></li>
+</ul>
+</div>
+<div class="section" id="py4j-0-6">
+<h2>7.2. Py4J 0.6<a class="headerlink" href="#py4j-0-6" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added new exception <tt class="docutils literal"><span class="pre">Py4JJavaError</span></tt> that enables Python client programs to access
+instance of Java exception thrown in the Java client code.</li>
+<li>Improved Py4J setup: no more warnings displayed when installing Py4J.</li>
+<li>Bug fixes and API additions.</li>
+<li><a class="reference external" href="https://github.com/bartdag/py4j/issues/labels/v0.6">github 0.6 milestone</a></li>
+</ul>
+</div>
+<div class="section" id="py4j-0-5">
+<h2>7.3. Py4J 0.5<a class="headerlink" href="#py4j-0-5" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added the ability to import packages (e.g., <tt class="docutils literal"><span class="pre">java_import(gateway.jvm,</span> <span class="pre">'java.io.*')</span></tt>)</li>
+<li>Added support for pattern filtering in <tt class="docutils literal"><span class="pre">JavaGateway.help()</span></tt> (e.g., <tt class="docutils literal"><span class="pre">gateway.help(obj,'get*Foo*Bar')</span></tt>)</li>
+<li>Added support for automatic conversion of Python collections (list, set,
+dictionary) to Java collections. User <tt class="docutils literal"><span class="pre">JavaGateway(auto_convert=True)</span></tt> or
+an explicit convertor.</li>
+<li>Created two Eclipse features: one embeds the Py4J
+Java library. The other
+provides a default GatewayServer that is started when Eclipse starts. Both
+features are available on the new Py4J Eclipse update site:
+<tt class="docutils literal"><span class="pre">http://py4j.sourceforge.net/py4j_eclipse</span></tt></li>
+<li>Redesigned the module decomposition of Py4J: there are no more mandatory circular dependencies among modules.</li>
+<li><a class="reference external" href="https://github.com/bartdag/py4j/issues/labels/v0.5">github 0.5 milestone</a></li>
+</ul>
+</div>
+<div class="section" id="py4j-0-4">
+<h2>7.4. Py4J 0.4<a class="headerlink" href="#py4j-0-4" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Polishing of existing features: fields can be set (not just read), None is accepted as a method parameter, methods are sorted alhabetically in gateway.help(), etc.</li>
+<li>Java Exception Stack Trace are now propagated to Python side.</li>
+<li>Changed <strong>interfaces</strong> member in Callback classes to <strong>implements</strong>.</li>
+<li>Internal refactoring to adopt clearer terminology and make Py4J protocol extensible.</li>
+<li>Many bug fixes: most are related to the callback feature.</li>
+<li><a class="reference external" href="https://github.com/bartdag/py4j/issues/labels/v0.4">github 0.4 milestone</a></li>
+</ul>
+</div>
+<div class="section" id="py4j-0-3">
+<h2>7.5. Py4J 0.3<a class="headerlink" href="#py4j-0-3" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added support for Java arrays and set.</li>
+<li>Added support for callbacks: Java objects can now call back Python objects.</li>
+<li>Completely redesigned threading and connection model of Py4J to allow multiple threads and callbacks on both side.</li>
+<li>Refactored the memory management to ensure best effort garbage collection.</li>
+<li><a class="reference external" href="https://github.com/bartdag/py4j/issues/labels/v0.3">github 0.3 milestone</a></li>
+</ul>
+</div>
+<div class="section" id="py4j-0-2">
+<h2>7.6. Py4J 0.2<a class="headerlink" href="#py4j-0-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>It is now possible to call constructors and reference static members: use the <cite>jvm</cite> member of a <cite>JavaGateway</cite> object.</li>
+<li>Java Map is converted to a Python Dictionary.</li>
+<li>Field access is supported through the <tt class="docutils literal"><span class="pre">get_field</span></tt> function or the <tt class="docutils literal"><span class="pre">auto_field=True</span></tt> member of <cite>JavaGateway</cite>.</li>
+<li>Obtain an interactive help page with <tt class="docutils literal"><span class="pre">JavaGateway.help(object)</span></tt>.</li>
+<li>Set is only accessible through the Java Set interface for now.</li>
+<li>Arrays can be referenced, but individual items can only be accessed with this workaround: <tt class="docutils literal"><span class="pre">gateway.jvm.java.lang.reflect.Array.get(object,index)</span></tt>.</li>
+<li>Complete rewrite of the reflection engine on the Java side for more flexibility.</li>
+<li>Improved memory model: no more memory leak caused by Py4J.</li>
+<li>New concurrency model: Py4J is now thread-safe.</li>
+<li><a class="reference external" href="https://github.com/bartdag/py4j/issues/labels/v0.2">github 0.2 milestone</a></li>
+</ul>
+</div>
+<div class="section" id="py4j-0-1">
+<h2>7.7. Py4J 0.1<a class="headerlink" href="#py4j-0-1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>This is the first release.</li>
+<li>Basic features like connecting to a JVM and calling methods are implemented.</li>
+<li>Java List is converted to a Python List.</li>
+<li>Field access, constructors, and static classes are <strong>NOT</strong> accessible yet.</li>
+<li>Dictionary and Set are only accessible through the Java Map and Set interface for now.</li>
+<li>Arrays can be referenced, but individual items cannot be accessed yet.</li>
+<li><a class="reference external" href="https://github.com/bartdag/py4j/issues/labels/v0.1">github 0.1 milestone</a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+		  		
+				<div class="helpbar">
+					<h3>Questions/Feedback?</h3>
+					<ul>
+						<li>Try the <a href="faq.html">FAQ</a> -- It answers many questions.</li>
+						<li>Search for information in the <a href="http://sourceforge.net/mailarchive/forum.php?forum_name=py4j-users">archives of the py4j-users mailing list</a>, or <a href="https://lists.sourceforge.net/lists/listinfo/py4j-users">post a question</a>.</li>
+						<li>If you notice errors with this documentation, <a href="https://github.com/bartdag/py4j/issues">open a ticket</a> and let us know. Please, only open a ticket for feedback or improvements on the docs. To get help, use the links above!</li>
+					</ul>
+				</div>
+				<script type="text/javascript">  var disqus_developer = 0; </script> 
+                                  <div id="disqus_thread"></div>
+                                      <script type="text/javascript">
+                                          /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+                                          var disqus_shortname = 'py4j'; // required: replace example with your forum shortname
+
+                                          // The following are highly recommended additional parameters. Remove the slashes in front to use.
+                                          var disqus_identifier = 'changelog';
+                                          //var disqus_url = '#'
+
+                                          /* * * DON'T EDIT BELOW THIS LINE * * */
+                                          (function() {
+                                              var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+                                              dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+                                              (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+                                          })();
+                                      </script>
+                                      <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+                                      <a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a> 
+				
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 5px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="faq.html" title="6. Frequently Asked Questions"
+             >previous</a> |</li>
+    <li><a href="index.html">Home</a> |</li>
+	<li><a href="download.html">Download</a> |</li>
+	<li><a href="contents.html">Doc</a> |</li>
+	<li><a href="http://py4j.wordpress.com">Blog</a> |</li>
+	<li><a href="https://github.com/bartdag/py4j">github</a> |</li>
+	<li><a href="about.html">About</a> &raquo;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009-2011, Barthélémy Dagenais.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </div>
+  
+  
+  <script type="text/javascript">
+      //<![CDATA[
+      (function(){
+          var links = document.getElementsByTagName('a');
+          var query = '?';
+          for (var i = 0; i < links.length; i++) {
+              if (links[i].href.indexOf('#disqus_thread') >= 0) {
+                  query += 'url' + i + '=' + encodeURIComponent(links[i].href) + '&';
+              }
+          }
+          document.write('<script charset="utf-8" type="text/javascript" src="http://disqus.com/forums/py4j/get_num_replies.js' + query + '"></' + 'script>');
+      })();
+      //]]>
+  </script>
+  
+  </body>
+  
+
+</html>
