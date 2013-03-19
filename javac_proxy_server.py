@@ -24,7 +24,7 @@ CLIENT_SOCKET_NAME = '\0javac_proxy_client_'
 SERVER_SOCKET_NAME = '\0javac_proxy_server'
 COMPILER_SOCKET_NAME = '\0javac_proxy_compiler_'
 
-MIN_READY_COMPILERS = 1
+MIN_READY_COMPILERS = 8
 
 is_server = False
 
@@ -186,7 +186,7 @@ class CompilerInstance(object):
 
   def Compile(self, message):
     args = java_collections.ListConverter().convert(message.args, self.gateway._gateway_client)
-    results = self.gateway.jvm.JavacProxyCompiler.compile(args)
+    results = self.gateway.jvm.JavacProxyCompiler.compile(args, message.cwd)
     self._Expect(COMPILE_END_SIGNAL)
     return (results.output(), results.returnCode())
 
@@ -273,7 +273,7 @@ def SpinUpCompiler():
 
 def WarmUpCompiler(compiler):
   warming_compilers.add(compiler.id)
-  message = CompileMessage(args=['-d', 'out', 'WarmUp.java'])
+  message = CompileMessage(args=['-d', 'out', 'WarmUp.java'], cwd=os.getcwd())
   compiler.Compile(message)
 
 def CompilerFinished(compiler_id):

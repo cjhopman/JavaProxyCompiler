@@ -29,7 +29,7 @@ class JavacProxyCompiler {
     public String output() { return output; }
   }
 
-  public static CompileResults compile(List<String> options) {
+  public static CompileResults compile(List<String> options, String cwd) {
     int returnCode = 1;
     String output = "";
     // TODO: The client should be able to de-interleave stdout and stderr if it wants.
@@ -38,6 +38,7 @@ class JavacProxyCompiler {
     try {
       System.setOut(new PrintStream(output_stream));
       System.setErr(new PrintStream(output_stream));
+      System.setProperty("user.dir", cwd);
       returnCode = com.sun.tools.javac.Main.compile(options.toArray(new String[0]));
     } catch (IllegalArgumentException e) {
       e.printStackTrace();
