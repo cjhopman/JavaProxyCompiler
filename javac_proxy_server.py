@@ -203,6 +203,7 @@ class CompilerHandlers(SimpleHandlers):
       SimpleSocket().Respond(message, PrintMessage('Trying to compile...'))
       (response.output, response.return_code) = self.compiler.Compile(message)
       SimpleSocket().Respond(message, response)
+      SimpleSocket().Respond(message, PrintMessage(message.cwd))
       SimpleSocket().Send(SERVER_SOCKET_NAME, CompilerFinishedMessage(self.compiler.id))
     except:
       stacktrace = traceback.format_exc()
@@ -339,6 +340,7 @@ def ClientCompile(argv):
   response_name = CLIENT_SOCKET_NAME + str(os.getpid())
   response_sock.Listen(response_name)
 
+  print os.getcwd()
   message = CompileMessage(return_socket=response_name, args=argv[2:], cwd=os.getcwd())
   SimpleSocket().Send(SERVER_SOCKET_NAME, message)
   message_handlers = ClientHandlers()
