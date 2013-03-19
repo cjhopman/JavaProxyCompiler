@@ -6,13 +6,7 @@ import java.io.PrintStream;
 import java.net.ServerSocket;
 import java.util.List;
 
-import javax.tools.JavaCompiler;
-import javax.tools.ToolProvider;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.JavaFileObject;
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-
+import com.sun.tools.javac.Main;
 
 import py4j.GatewayServer;
 
@@ -23,20 +17,20 @@ class JavacProxyCompiler {
   public static final String PORT_SIGNAL = "-----PORT: %d-----";
 
   public static class CompileResults {
-    Boolean success;
+    int returnCode;
     String output;
 
-    CompileResults(Boolean s, String o) {
-      success = s;
+    CompileResults(int rc, String o) {
+      returnCode = rc;
       output = o;
     }
 
-    public Boolean success() { return success; }
+    public int returnCode() { return returnCode; }
     public String output() { return output; }
   }
 
-  public static CompileResults compile(List<String> options, List<String> javaFiles) {
-    Boolean success = false;
+  public static CompileResults compile(List<String> options) {
+    int returnCode = 1;
     String output = "";
     // TODO: The client should be able to de-interleave stdout and stderr if it wants.
     ByteArrayOutputStream output_stream = new ByteArrayOutputStream();
@@ -44,17 +38,9 @@ class JavacProxyCompiler {
     try {
       System.setOut(new PrintStream(output_stream));
       System.setErr(new PrintStream(output_stream));
-
-      JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-      StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-
-      Iterable<? extends JavaFileObject> fileObjects =
-        fileManager.getJavaFileObjectsFromStrings(javaFiles);
-      success = compiler.getTask(null, fileManager, null, options, null, fileObjects).call();
-      fileManager.close();
-
-    } catch (IOException e) {
-      success = false;
+      returnCode = com.sun.tools.javac.Main.compile(options.toArray(new String[0]));
+    } catch (IllegalArgumentException e) {
+      e.printStackTrace();
     } finally {
       output = output_stream.toString();
       System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out)));
@@ -62,7 +48,7 @@ class JavacProxyCompiler {
     }
 
     sendMessage(COMPILE_END_SIGNAL);
-    return new CompileResults(success, output);
+    return new CompileResults(returnCode, output);
   }
 
   public static void sendMessage(String message) {

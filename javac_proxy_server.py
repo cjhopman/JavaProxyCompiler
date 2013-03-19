@@ -1,17 +1,20 @@
+import atexit
+import collections
 import optparse
 import os
-import subprocess
 import pexpect
 import pickle
 import socket
 import sys
 import time
+import traceback
 
 from py4j import java_gateway
 from py4j import java_collections
 
 DEAD_SIGNAL = '-----COMPILER DIED-----'
 READY_SIGNAL = '-----COMPILER READY-----'
+PROXY_READY_SIGNAL = '-----PROXY READY-----'
 PORT_SIGNAL = '-----PORT: ([0-9]*)-----'
 SOCKET_SIGNAL = '-----SOCKET: %s-----'
 SOCKET_SIGNAL_RE = '-----SOCKET: (\0[a-zA-Z0-9_]*)-----'
@@ -21,28 +24,105 @@ CLIENT_SOCKET_NAME = '\0javac_proxy_client_'
 SERVER_SOCKET_NAME = '\0javac_proxy_server'
 COMPILER_SOCKET_NAME = '\0javac_proxy_compiler_'
 
-def TimeIt(func):
-  def wrapper(*arg):
-    t1 = time.time()
-    res = func(*arg)
-    t2 = time.time()
-    print '%s took %0.3f ms' % (func.func_name, (t2 - t1) * 1000.0)
-    return res
-  return wrapper
+MIN_READY_COMPILERS = 1
+
+is_server = False
+
+class Log(object):
+  @staticmethod
+  def Debug(message):
+    return
+    print message
+    if not is_server:
+      SimpleSocket().Send(SERVER_SOCKET_NAME, PrintMessage(message))
+
+
+class SimpleMessage(object):
+  def __init__(self, command, return_socket=None):
+    self.command = command
+    self.return_socket = return_socket
+
+  def Handle(self, handlers):
+    raise Exception('Invalid Message')
+
+
+class CompileMessage(SimpleMessage):
+  def __init__(self, return_socket=None, cwd=None, args=None):
+    SimpleMessage.__init__(self, 'compile', return_socket)
+    self.cwd = cwd
+    self.args = args
+
+  def Handle(self, handlers):
+    return handlers.Compile(self)
+
+
+class CompilerFinishedMessage(SimpleMessage):
+  def __init__(self, compiler_id, output=None):
+    SimpleMessage.__init__(self, 'compiler_finished', None)
+    self.compiler_id = compiler_id
+    self.output = output
+
+  def Handle(self, handlers):
+    return handlers.CompilerFinished(self)
+
+
+class CompileResultsMessage(SimpleMessage):
+  def __init__(self, output=None, return_code=1):
+    SimpleMessage.__init__(self, 'compile_results', None)
+    self.output = output
+    self.return_code = return_code
+
+  def Handle(self, handlers):
+    return handlers.CompileResults(self)
+
+
+class AckMessage(SimpleMessage):
+  def __init__(self, name):
+    SimpleMessage.__init__(self, 'ack', None)
+    self.name = name
+
+  def Handle(self, handlers):
+    return handlers.Ack(self)
+
+class KillMessage(SimpleMessage):
+  def Handle(self, handlers):
+    return handlers.Kill(self)
+
+
+class PrintMessage(SimpleMessage):
+  def __init__(self, message):
+    self.message = message
+
+  def Handle(self, handlers):
+    return handlers.Print(self)
+
+
+class SimpleHandlers(object):
+  def Ack(self, message):
+    pass
+
+  def Ping(self, message):
+    SimpleSocket().Send(message.return_socket, AckMessage('pong'))
+
+  def Print(self, message):
+    print message.message
+
+  def Kill(self, message):
+    Log.Debug('Received kill message from: %s' % message.return_socket)
+    sys.exit(1)
+
 
 
 class SimpleSocket(object):
   def __init__(self):
     self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
-
   def Listen(self, name):
     self.sock.bind(name)
     self.sock.setblocking(1)
     self.sock.listen(5)
 
-
-  def Accept(self, timeout=None):
+  def Accept(self, handlers=SimpleHandlers(), timeout=None):
     self.sock.settimeout(timeout)
     connection, _ = self.sock.accept()
     try:
@@ -53,10 +133,11 @@ class SimpleSocket(object):
           client_data += data
         else:
           break
-      return pickle.loads(client_data)
     finally:
       connection.close()
 
+    message = pickle.loads(client_data)
+    return message.Handle(handlers)
 
   def Send(self, name, message):
     self.sock.connect(name)
@@ -65,113 +146,206 @@ class SimpleSocket(object):
     finally:
       self.sock.close()
 
+  def Respond(self, message, response):
+    if not message.return_socket:
+      return
+    self.Send(message.return_socket, response)
 
-class CompilerProcess(object):
-  def __init__(self, port):
-    self.port = port
-    java_cmd = ['java', '-classpath', 'py4j0.7.jar:out', 'JavacProxyCompiler']
-    self.process = pexpect.spawn(' '.join(java_cmd))
+def Closer(process):
+  def Func():
+    process.terminate()
+  return Func
+
+def Spawn(*args, **kwargs):
+  child = pexpect.spawn(*args, **kwargs)
+  atexit.register(Closer(child))
+  return child
+
+class CompilerInstance(object):
+  def __init__(self, id):
+    self.id = id
+    java_cmd = ['java', '-classpath', 'py4j0.7.jar:out:/usr/lib/jvm/java-6-sun/lib/tools.jar', 'JavacProxyCompiler']
+    self.process = Spawn(' '.join(java_cmd))
     self.process.logfile = sys.stdout
 
-    self.Expect(READY_SIGNAL)
-    match = self.Expect(PORT_SIGNAL)
+    self._Expect(READY_SIGNAL)
+    match = self._Expect(PORT_SIGNAL)
     self.port = int(match.group(1))
 
     self.gateway_client = java_gateway.GatewayClient(port=self.port)
     self.gateway = java_gateway.JavaGateway(gateway_client=self.gateway_client)
 
-
-  def Expect(self, signal):
+  def _Expect(self, signal):
     idx = self.process.expect([DEAD_SIGNAL, signal])
     if idx == 0:
       self.Kill('Got DEAD_SIGNAL. Expected: ' + signal)
     return self.process.match
 
-
   def Kill(self):
     raise Exception('Dead')
 
-  def WarmUp(self):
-    self.Compile(['-d', 'out', 'WarmUp.java'])
+  def Compile(self, message):
+    args = java_collections.ListConverter().convert(message.args, self.gateway._gateway_client)
+    results = self.gateway.jvm.JavacProxyCompiler.compile(args)
+    self._Expect(COMPILE_END_SIGNAL)
+    return (results.output(), results.returnCode())
 
 
-  @TimeIt
-  def Compile(self, args, return_socket_name=None):
-    idx = len(args)
-    while idx > 0 and args[idx - 1].endswith('.java'):
-      idx -= 1
-    files = args[idx:]
-    options = args[:idx]
+class CompilerHandlers(SimpleHandlers):
+  def __init__(self, compiler):
+    SimpleHandlers.__init__(self)
+    self.compiler = compiler
 
-    files = java_collections.ListConverter().convert(files, self.gateway._gateway_client)
-    options = java_collections.ListConverter().convert(options, self.gateway._gateway_client)
-    results = self.gateway.jvm.JavacProxyCompiler.compile(options, files)
-    self.Expect(COMPILE_END_SIGNAL)
+  def Compile(self, message):
+    SimpleSocket().Respond(message, AckMessage('compiler_compile'))
+    response = CompileResultsMessage()
+    try:
+      SimpleSocket().Respond(message, PrintMessage('Trying to compile...'))
+      (response.output, response.return_code) = self.compiler.Compile(message)
+      SimpleSocket().Respond(message, response)
+      SimpleSocket().Send(SERVER_SOCKET_NAME, CompilerFinishedMessage(self.compiler.id))
+    except:
+      stacktrace = traceback.format_exc()
+      SimpleSocket().Send(SERVER_SOCKET_NAME, PrintMessage(stacktrace))
+      SimpleSocket().Respond(message, PrintMessage(stacktrace))
+      sys.exit(1)
 
-    if return_socket_name:
-      return_sock = SimpleSocket()
-      return_sock.Send(return_socket_name, (results.output(), 'stderr', results.success()))
 
-
-def RunCompiler():
-  compiler = CompilerProcess(0)
-  compiler.WarmUp()
-
+def RunCompiler(compiler_id):
+  compiler = CompilerInstance(compiler_id)
   socket_name = COMPILER_SOCKET_NAME + str(os.getpid())
   sock = SimpleSocket()
   sock.Listen(socket_name)
   print SOCKET_SIGNAL % socket_name
-  while True:
-    (return_socket, args) = sock.Accept()
-    SimpleSocket().Send(return_socket, 'compiler_compile_ack')
-    compiler.Compile(args, return_socket)
+
+  try:
+    while True:
+      sock.Accept(CompilerHandlers(compiler))
+  except:
+    stacktrace = traceback.format_exc()
+    SimpleSocket().Send(SERVER_SOCKET_NAME, PrintMessage(stacktrace))
+    sys.exit(1)
+
+
+
+compilers = {}
+next_compiler_id = 0
+
+def CompilerId():
+  global next_compiler_id
+  ret = next_compiler_id
+  next_compiler_id += 1
+  return str(ret)
+
+class CompilerProcess(object):
+  def __init__(self):
+    self.id = CompilerId()
+    self.process = Spawn('python javac_proxy_server.py _run_compiler ' + self.id)
+    self.process.logfile = sys.stdout
+    self.process.expect(SOCKET_SIGNAL_RE)
+    self.socket_name = self.process.match.group(1)
+    compilers[self.id] = self
+
+  def Compile(self, message):
+    SimpleSocket().Send(self.socket_name, message)
+
+
+ready_compilers = collections.deque()
+warming_compilers = set()
+
+def Compile(message):
+  if ready_compilers:
+    compiler = ready_compilers.popleft()
+  else:
+    compiler = CompilerProcess()
+
+  compiler.Compile(message)
+
+def RefreshCompilers():
+  while ShouldSpinUpCompiler():
+    SpinUpCompiler()
+
+def ShouldSpinUpCompiler():
+  return len(ready_compilers) + len(warming_compilers) < MIN_READY_COMPILERS
+
+def SpinUpCompiler():
+  WarmUpCompiler(CompilerProcess())
+
+def WarmUpCompiler(compiler):
+  warming_compilers.add(compiler.id)
+  message = CompileMessage(args=['-d', 'out', 'WarmUp.java'])
+  compiler.Compile(message)
+
+def CompilerFinished(compiler_id):
+  print 'Compiler Finished: ' + compiler_id
+  ready_compilers.appendleft(compilers[compiler_id])
+  if compiler_id in warming_compilers:
+    warming_compilers.remove(compiler_id)
+
+
+class ServerHandlers(SimpleHandlers):
+  def CompilerFinished(self, message):
+    CompilerFinished(message.compiler_id)
+
+  def Compile(self, message):
+    SimpleSocket().Respond(message, AckMessage('server_compile'))
+    Compile(message)
+
+  def Kill(self, message):
+    SimpleSocket().Respond(message, AckMessage('server_kill'))
+    raise Exception('killing')
 
 
 def RunServer():
-  compiler_process = pexpect.spawn('python javac_proxy_server.py _run_compiler')
-  compiler_process.logfile = sys.stdout
-  compiler_process.expect(SOCKET_SIGNAL_RE)
-  compiler_socket_name = compiler_process.match.group(1)
-
+  global is_server
+  is_server = True
   sock = SimpleSocket()
   sock.Listen(SERVER_SOCKET_NAME)
+  RefreshCompilers()
   while True:
-    (command, data) = sock.Accept()
-    if command == 'kill':
-      return
-    if command == 'compile':
-      (return_socket, _) = data
-      SimpleSocket().Send(return_socket, 'server_compile_ack')
-      SimpleSocket().Send(compiler_socket_name, data)
-    if command == 'ping':
-      SimpleSocket().Send(data, 'pong')
+    message = sock.Accept(ServerHandlers())
+    RefreshCompilers()
 
 
-def StartCompilerProxy():
+def StartServer():
   pass
 
 
-def KillCompilerProxy():
+def KillServer():
+  sock = SimpleSocket()
+  socket_name = CLIENT_SOCKET_NAME + str(os.getpid())
+  sock.Listen(socket_name)
+
+  SimpleSocket().Send(SERVER_SOCKET_NAME, KillMessage(socket_name))
+  sock.Accept(SimpleHandlers())
+  print 'Server killed'
+
+
+def RestartServer():
   pass
 
 def PrintHelp():
   pass
 
-def Compile(argv):
+class ClientHandlers(SimpleHandlers):
+  def CompileResults(self, message):
+    if message.output:
+      print message.output
+    sys.exit(message.return_code)
+
+# Actual client
+def ClientCompile(argv):
   response_sock = SimpleSocket()
   response_name = CLIENT_SOCKET_NAME + str(os.getpid())
   response_sock.Listen(response_name)
 
-  SimpleSocket().Send(SERVER_SOCKET_NAME, ('compile', (response_name, argv[2:])))
-  server_ack = response_sock.Accept(1.0)
-  compiler_ack = response_sock.Accept(1.0)
-  print server_ack, compiler_ack
+  message = CompileMessage(return_socket=response_name, args=argv[2:], cwd=os.getcwd())
+  SimpleSocket().Send(SERVER_SOCKET_NAME, message)
+  message_handlers = ClientHandlers()
 
-  (stdout, stderr, success) = response_sock.Accept()
-  if stdout:
-    print stdout
+  while True:
+    response_sock.Accept(message_handlers)
 
-  return 0 if success else 1
 
 def main(argv):
   if len(argv) < 1:
@@ -181,19 +355,22 @@ def main(argv):
   command = argv[1]
 
   if command == '_run_compiler':
-    RunCompiler()
+    return RunCompiler(argv[2])
 
   if command == '_run_server':
-    RunServer()
+    return RunServer()
 
   if command == 'kill':
-    KillCompilerProxy()
+    return KillServer()
 
   if command == 'start':
-    StartCompilerProxy()
+    return StartServer()
+
+  if command == 'restart':
+    return RestartServer()
 
   if command == 'compile':
-    Compile(argv)
+    return ClientCompile(argv)
 
 
 if __name__ == '__main__':
