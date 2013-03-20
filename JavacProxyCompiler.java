@@ -31,9 +31,16 @@ class JavacProxyCompiler {
   }
 
   enum OptionType {
+    None,
     Single,
     Multiple,
   }
+
+  public static String Absolutize(String cwd, String path) {
+      if (path.charAt(0) == '/') return path;
+      return new File(cwd, path).getAbsolutePath();
+  }
+
 
   public static CompileResults compile(List<String> options, String cwd) {
     int returnCode = 1;
@@ -66,28 +73,43 @@ class JavacProxyCompiler {
           if (option == "-d" || option == "-s") {
             nextType = OptionType.Single;
           } else if (
-              option == "-classpath" ||
-              option == "-cp" ||
-              option == "-sourcepath" ||
-              option == "-bootclasspath" ||
-              option == "-extdirs" ||
-              option == "-endorseddirs" ||
-              option == "-processorpath"
+              option.equals("-classpath") ||
+              option.equals("-cp") ||
+              option.equals("-sourcepath") ||
+              option.equals("-bootclasspath") ||
+              option.equals("-extdirs") ||
+              option.equals("-endorseddirs") ||
+              option.equals("-processorpath")
               ) {
             nextType = OptionType.Multiple;
+          } else if (
+              option.equals("-encoding") ||
+              option.equals("-source") ||
+              option.equals("-target")
+              ) {
+            nextType = OptionType.None;
           }
         } else if (nextType == OptionType.Single) {
           if (option.length() > 0 && option.charAt(0) != '/') {
-            option = new File(cwd, option).getAbsolutePath();
+            option = Absolutize(cwd, option);
           }
         } else if (nextType == OptionType.Multiple) {
-
+            String abs_option = "";
+            boolean first = true;
+            for (String s: option.split(":")) {
+                if (!first) {
+                    abs_option += ":";
+                }
+                abs_option += Absolutize(cwd, s);
+                first = false;
+            }
+            option = abs_option;
+            nextType = OptionType.Single;
+        } else if (nextType == OptionType.None) {
+            nextType = OptionType.Single;
         }
         fixedOptions[i + 4] = option;
       }
-      System.setProperty("user.dir", cwd);
-      System.out.println(System.getProperty("user.dir"));
-      System.out.println(cwd);
       returnCode = com.sun.tools.javac.Main.compile(fixedOptions);
     } catch (Throwable e) {
       e.printStackTrace();
