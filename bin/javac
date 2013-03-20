@@ -1,0 +1,3 @@
+#!/bin/bash
+
+python $JAVA_PROXY_COMPILER_DIR/javac_proxy_server.py compile "$@"
