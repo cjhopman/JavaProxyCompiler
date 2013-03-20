@@ -1,3 +1,7 @@
 #!/bin/bash
 
-python $JAVA_PROXY_COMPILER_DIR/javac_proxy_server.py compile "$@"
+if [ -z "${USE_JAVAC_PROXY+defined}" ]; then
+  /usr/bin/javac "$@"
+else
+  python $JAVA_PROXY_COMPILER_DIR/javac_proxy_server.py compile "$@"
+fi
