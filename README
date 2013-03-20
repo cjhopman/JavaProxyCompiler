@@ -14,3 +14,7 @@ This process is about 400-800ms faster than just running javac directly.
 This is particularly useful for something that does many calls to javac with few files in each call... like Chrome for Android's build system.
 
 
+
+See simple_comparison.txt to see a comparison of the compile steps on the critical path of a typical Chrome for Android build.
+
+
