@@ -26,6 +26,8 @@ COMPILER_SOCKET_NAME = '\0javac_proxy_compiler_'
 
 MIN_READY_COMPILERS = 8
 
+JPC_DIR = os.path.abspath(os.path.dirname(__file__))
+
 is_server = False
 
 class Log(object):
@@ -165,7 +167,7 @@ class CompilerInstance(object):
   def __init__(self, id):
     self.id = id
     java_cmd = ['java', '-classpath', 'py4j0.7.jar:out:/usr/lib/jvm/java-6-sun/lib/tools.jar', 'JavacProxyCompiler']
-    self.process = Spawn(' '.join(java_cmd))
+    self.process = Spawn(' '.join(java_cmd), cwd=JPC_DIR)
     self.process.logfile = sys.stdout
 
     self._Expect(READY_SIGNAL)
@@ -241,7 +243,7 @@ def CompilerId():
 class CompilerProcess(object):
   def __init__(self):
     self.id = CompilerId()
-    self.process = Spawn('python javac_proxy_server.py _run_compiler ' + self.id)
+    self.process = Spawn('python javac_proxy_server.py _run_compiler ' + self.id, cwd=JPC_DIR)
     self.process.logfile = sys.stdout
     self.process.expect(SOCKET_SIGNAL_RE)
     self.socket_name = self.process.match.group(1)
