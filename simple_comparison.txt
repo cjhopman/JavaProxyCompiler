@@ -1,0 +1,15 @@
+Without java_proxy_compiler:
+0:02.048 0:01.058 ACTION Compiling base_java java sources
+0:03.648 0:00.809 ACTION Compiling net_java java sources
+0:06.286 0:02.542 ACTION Compiling content_java java sources
+0:07.178 0:00.748 ACTION Compiling web_contents_delegate_android_java java sources
+0:08.739 0:01.455 ACTION Compiling chrome_java java sources
+0:09.826 0:00.978 ACTION Compiling chromium_testshell java sources
+
+With java_proxy_compiler:
+0:01.034 0:00.204 ACTION Compiling base_java java sources
+0:02.273 0:00.473 ACTION Compiling net_java java sources
+0:03.927 0:01.566 ACTION Compiling content_java java sources
+0:04.149 0:00.132 ACTION Compiling web_contents_delegate_android_java java sources
+0:04.621 0:00.410 ACTION Compiling chrome_java java sources
+0:04.830 0:00.142 ACTION Compiling chromium_testshell java sources
