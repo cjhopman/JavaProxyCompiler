@@ -1,3 +1,16 @@
 This is a simple transparent javac proxy.
 
+First, start a server (TODO: the client should do this automatically if the server isn't running).
+This server will spin up several processes running JavacProxyCompiler.java, and have each of them compile WarmUp.java.
+Then, use something like bin/javac to proxy javac.
+Then compile something.
+i.e. "javac <args>"
+This proxy's client will forward (cwd, args) to the server.
+The server will send that to one of its Java processes.
+The Java process will absolutize the paths in args and run the real javac compiler.
+The output/return_code of the compiler will be routed back to the client.
+
+This process is about 400-800ms faster than just running javac directly.
+This is particularly useful for something that does many calls to javac with few files in each call... like Chrome for Android's build system.
+
 
